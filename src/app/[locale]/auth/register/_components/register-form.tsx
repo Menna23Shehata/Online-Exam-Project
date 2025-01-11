@@ -1,7 +1,9 @@
 "use client"
 
 import { useRouter } from "@/i18n/routing"
-import { useTranslations } from "next-intl"
+import { registerAction } from "@/lib/actions/auth.action"
+import { useFormatter, useTranslations } from "next-intl"
+import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 
 
@@ -18,16 +20,31 @@ type Inputs = {
 export default function RegisterForm() {
     // translation
     const t = useTranslations()
+    const format = useFormatter()
 
     // navigation
     const router = useRouter()
+
+    // state
+    const [error, setError] = useState<string | null>(null)
 
     // form and validation
     const { register, handleSubmit, formState } = useForm<Inputs>({})
 
     // functions
-    const onSubmit: SubmitHandler<Inputs> = (values) => {
-        console.log(values);
+    const onSubmit: SubmitHandler<Inputs> = async (values) => {
+        const payload = await registerAction(values)
+
+        if (payload.status === 'success') {
+            router.push('/auth/login')
+            return
+        }
+
+        if(typeof payload.message ==='string') setError(payload.message)
+
+            setError(format.list((payload.message as ValidationError[]).map((error)=>error.errorMessage),{
+                type:'conjunction'
+            }))
 
     }
 
@@ -38,10 +55,12 @@ export default function RegisterForm() {
         {/* userName */}
         <div className="flex flex-col gap-1">
             <label htmlFor="name" className="text-white capitalize text-lg font-semibold">{t('username')}</label>
-            <input {...register("username",{required:{
-                value:true,
-                message:t('please-enter-your-username')
-            }})} type="text" placeholder={t('please-enter-your-username')} className="rounded-md px-3 py-1 text-stone-950" />
+            <input {...register("username", {
+                required: {
+                    value: true,
+                    message: t('please-enter-your-username')
+                }
+            })} type="text" placeholder={t('please-enter-your-username')} className="rounded-md px-3 py-1 text-stone-950" />
             <p className="text-red-400 text-sm font-semibold">{formState.errors.username?.message}</p>
         </div>
 
@@ -92,6 +111,8 @@ export default function RegisterForm() {
             <input {...register("phone")} type="number" placeholder={t('please-enter-your-phone-number')} className="rounded-md px-3 py-1 text-stone-950" />
             <p className="text-red-400 text-sm font-semibold">{formState.errors.phone?.message}</p>
         </div>
+
+        <p className="text-error mb-4 text-center">{error}</p>
 
         {/* register button */}
         <div className="flex flex-col justify-center mt-12">

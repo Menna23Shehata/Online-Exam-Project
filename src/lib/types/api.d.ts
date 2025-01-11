@@ -4,10 +4,16 @@ declare type SuccessfullResponse<T> = {
     data: T
 }
 
-declare type ErrorResponse = {
+declare type ValidationError = {
+    field: string,
+    errorMessage: string
+}
+
+declare type ErrorResponse={
     status: 'error' | 'fail',
     statusCode: number,
-    message: string
+    message: string | ValidationError[]
 }
+
 
 declare type APIResponse<T> = SuccessfullResponse<T> | ErrorResponse
